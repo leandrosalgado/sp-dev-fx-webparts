@@ -1,39 +1,27 @@
-import { WebPartContext } from "@microsoft/sp-webpart-base";
-import { sp } from '@pnp/sp';
+import {WebPartContext} from "@microsoft/sp-webpart-base";
+import {sp} from "@pnp/sp";
 
-export default class spservices {
+export default class SPServices {
   constructor(private context: WebPartContext) {
     sp.setup({
       spfxContext: this.context
     });
   }
 
-  /**
-   * Get user profile properties
-   * @param user 
-   */
   public async getUserProperties(user: string) {
-
-    let currentUserProperties: any = await sp.profiles.getPropertiesFor(user);
-    return currentUserProperties;
+    return await sp.profiles.getPropertiesFor(user);
   }
 
   /**
-   * 
-   * @param user 
-   * @param property 
+   * async GetUserProfileProperty
+   * user:string
    */
   public async getUserProfileProperty(user: string, property: string) {
-    let UserProperty: any = await sp.profiles.getUserProfilePropertyFor(user, property);
-    return UserProperty;
-  }
+    let UserProperty: any = await sp.profiles.getUserProfilePropertyFor(
+      user,
+      property
+    );
 
-  public async getManager(userID: string) {
-    const client = await this.context.msGraphClientFactory.getClient();
-    const user = "tomas.safar@lmsalgado.onmicrosoft.com";
-    // const manager = await client.api(`user/${userID}/manager`).version("v1.0").get();
-    const manager = await client.api(`users/${user}/manager`).version("v1.0").get();
-    //const manager = await client.api(`me/directReports`).version("v1.0").get();
-    return manager;
+    return UserProperty;
   }
 }
