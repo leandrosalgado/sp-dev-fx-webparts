@@ -1,6 +1,7 @@
-import {ITreeChildren } from './ITreeChildren';
+import {ITreeChildren, ITreeTitle } from './ITreeChildren';
 export interface ITreeData {
-   title: any;
+   title: ITreeTitle;
    expanded ?: boolean;
    children ? : ITreeChildren[];
+   filterFound?: boolean;
 }

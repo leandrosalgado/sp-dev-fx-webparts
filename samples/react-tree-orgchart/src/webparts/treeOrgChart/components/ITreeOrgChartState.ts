@@ -1,4 +1,7 @@
+import { ITreeData } from "./ITreeData";
+
 export interface ITreeOrgChartState {
-  treeData: any;
+  treeData: ITreeData[];
   isLoading: boolean;
+  search: string;
 }

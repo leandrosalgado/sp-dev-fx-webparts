@@ -7,7 +7,7 @@ import BigCalendar from 'react-big-calendar';
 import * as moment from 'moment';
 import * as strings from 'CalendarWebPartStrings';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-require('./calendar.css');
+require('./calendar2.module.css');
 import { CommunicationColors ,  FluentCustomizations, FluentTheme  } from '@uifabric/fluent-theme';
 
 import {

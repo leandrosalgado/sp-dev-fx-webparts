@@ -1,25 +1,17 @@
-// SPFx  React-tree-Organization-Chart
-// Author: João Mendes
-// Fev 2019
-//
 import * as React from 'react';
 import styles from './TreeOrgChart.module.scss';
 import { ITreeOrgChartProps } from './ITreeOrgChartProps';
 import { ITreeOrgChartState } from './ITreeOrgChartState';
-import { escape } from '@microsoft/sp-lodash-subset';
 import SortableTree from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
-import { IPersonaSharedProps, Persona, PersonaSize, PersonaPresence } from 'office-ui-fabric-react/lib/Persona';
-import { IconButton, IButtonProps } from 'office-ui-fabric-react/lib/Button';
 import { WebPartTitle } from "@pnp/spfx-controls-react/lib/WebPartTitle";
 import spservice from '../../../services/spservices';
 import { ITreeChildren } from './ITreeChildren';
 import { ITreeData } from './ITreeData';
-import { Spinner, SpinnerSize } from 'office-ui-fabric-react/lib/components/Spinner';
+import { Spinner, SpinnerSize, TextField, IconButton, IPersonaSharedProps, Persona, PersonaSize } from 'office-ui-fabric-react';
 
 export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, ITreeOrgChartState> {
   private treeData: ITreeData[];
-  private treeChildren: ITreeChildren[];
   private SPService: spservice;
 
   constructor(props) {
@@ -28,10 +20,14 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     this.SPService = new spservice(this.props.context);
     this.state = {
       treeData: [],
-      isLoading: true
+      isLoading: true,
+      search: ""
     };
   }
-  //
+  /**
+   * 
+   * @param treeData 
+   */
   private handleTreeOnChange(treeData) {
     this.setState({ treeData });
   }
@@ -45,10 +41,12 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
   public async componentDidMount() {
     await this.loadOrgchart();
   }
-  /*
-  // Load Organization Chart
-  */
+  /**
+   * Load Organization Chart
+   */
   public async loadOrgchart() {
+    const manager = await this.SPService.getManager(this.props.context.pageContext.user.email);
+    console.log(manager);
     this.setState({ treeData: [], isLoading: true });
     const currentUser = `i:0#.f|membership|${this.props.context.pageContext.user.loginName}`;
     const currentUserProperties = await this.SPService.getUserProperties(currentUser);
@@ -56,18 +54,14 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     // Test if show only my Team or All Organization Chart
     if (!this.props.currentUserTeam) {
       const treeManagers = await this.buildOrganizationChart(currentUserProperties);
-      treeManagers ?
-        this.treeData.push(treeManagers)
-        : null;
+      if (treeManagers) this.treeData.push(treeManagers);
     } else {
       const treeManagers = await this.buildMyTeamOrganizationChart(currentUserProperties);
-      treeManagers ?
-        this.treeData.push({
-          title: (treeManagers.person),
-          expanded: true,
-          children: treeManagers.treeChildren
-        })
-        : null;
+      if (treeManagers) this.treeData.push({
+        title: (treeManagers.person),
+        expanded: true,
+        children: treeManagers.treeChildren
+      });
     }
     console.log(JSON.stringify(this.treeData));
     this.setState({ treeData: this.treeData, isLoading: false });
@@ -85,9 +79,7 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     }
     return treeManagers;
   }
-  /*
-  // Get user from Top Manager
-  */
+  /*  Get user from Top Manager */
   private async getUsers(manager: string) {
 
     let person: any;
@@ -114,7 +106,7 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
       return { title: (person) };
     }
   }
-  // Get Children (user DirectReports)
+  /* Get Children (user DirectReports) */
   private async getChildren(userDirectReports: any[]) {
 
     let treeChildren: ITreeChildren[] = [];
@@ -149,22 +141,22 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     let treeChildren: ITreeChildren[] = [];
     let peer: IPersonaSharedProps = {};
     let imageInitials: string[];
-    let hasManager:boolean = false;
-    let  managerCard: any;
+    let hasManager: boolean = false;
+    let managerCard: any;
     // Get My Manager
     const myManager = await this.SPService.getUserProfileProperty(currentUserProperties.AccountName, 'Manager');
     // Get My Manager Properties
-    if (myManager){
+    if (myManager) {
       const managerProperties = await this.SPService.getUserProperties(myManager);
-    imageInitials = managerProperties.DisplayName.split(' ');
-    // PersonaCard Props
-    manager.imageUrl = `/_layouts/15/userphoto.aspx?size=L&username=${managerProperties.Email}`;
-    manager.imageInitials = `${imageInitials[0].substring(0, 1).toUpperCase()}${imageInitials[1].substring(0, 1).toUpperCase()}`;
-    manager.text = managerProperties.DisplayName;
-    manager.tertiaryText = managerProperties.Email;
-    manager.secondaryText = managerProperties.Title;
-    // PersonaCard Component
-     managerCard = <Persona {...manager} hidePersonaDetails={false} size={PersonaSize.size40} />;
+      imageInitials = managerProperties.DisplayName.split(' ');
+      // PersonaCard Props
+      manager.imageUrl = `/_layouts/15/userphoto.aspx?size=L&username=${managerProperties.Email}`;
+      manager.imageInitials = `${imageInitials[0].substring(0, 1).toUpperCase()}${imageInitials[1].substring(0, 1).toUpperCase()}`;
+      manager.text = managerProperties.DisplayName;
+      manager.tertiaryText = managerProperties.Email;
+      manager.secondaryText = managerProperties.Title;
+      // PersonaCard Component
+      managerCard = <Persona {...manager} hidePersonaDetails={false} size={PersonaSize.size40} />;
       hasManager = true;
     }
 
@@ -179,11 +171,10 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     const usersDirectReports: any[] = await this.getChildren(currentUserProperties.DirectReports);
     // Current USer Has Manager
     if (hasManager) {
-      treeChildren.push({ title: (meCard), expanded: true, children: usersDirectReports })
-
-    }else{
-        treeChildren = usersDirectReports;
-        managerCard = meCard;
+      treeChildren.push({ title: (meCard), expanded: true, children: usersDirectReports });
+    } else {
+      treeChildren = usersDirectReports;
+      managerCard = meCard;
     }
 
     // Get MyPeers
@@ -202,6 +193,14 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
     return { 'person': managerCard, 'treeChildren': treeChildren };
 
   }
+
+  private searchMethod = (el: { node: ITreeData, path: number[] | string[], treeIndex: number, searchQuery: any }) => {
+    const { node, searchQuery } = el;
+    if (!searchQuery) return false;
+    const title = node.title && node.title.props ? (node.title.props.text || "").toLowerCase() : "";
+    const login = (node.title.props.tertiaryText || "").toLowerCase();
+    return title.indexOf(searchQuery.toLowerCase()) > -1 || login.indexOf(searchQuery) > -1;
+  }
   // Render
   public render(): React.ReactElement<ITreeOrgChartProps> {
     return (
@@ -212,6 +211,9 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
         {
           this.state.isLoading ? <Spinner size={SpinnerSize.large} label="Loading Organization Chart ..."></Spinner> : null
         }
+        <div className={styles.searchContainer}>
+          <TextField value={this.state.search} onChange={(_, search) => this.setState({ search })} placeholder="Search" />
+        </div>
         <div className={styles.treeContainer}>
           <SortableTree
             treeData={this.state.treeData}
@@ -220,7 +222,10 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
             canDrop={false}
             rowHeight={70}
             maxDepth={this.props.maxLevels}
-            generateNodeProps={rowInfo => ({
+            searchMethod={this.searchMethod}
+            searchQuery={this.state.search}
+
+            generateNodeProps={(rowInfo: { node: ITreeChildren }) => ({
               buttons: [
                 <IconButton
                   disabled={false}
@@ -233,12 +238,11 @@ export default class TreeOrgChart extends React.Component<ITreeOrgChartProps, IT
                   }}
                 />
               ],
+
             })}
           />
         </div>
       </div>
     );
   }
-
-
 }

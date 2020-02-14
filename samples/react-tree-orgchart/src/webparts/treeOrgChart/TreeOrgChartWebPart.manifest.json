@@ -24,5 +24,6 @@
       "currentUserTeam": true,
       "maxLevels": 5
     }
-  }]
+  }],
+  "supportedHosts": ["SharePointWebPart"]
 }
